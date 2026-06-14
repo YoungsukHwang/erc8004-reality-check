@@ -14,7 +14,7 @@ Built for the **GCP "Best On-Chain Agent Economy Application"** track
 ($5,000). Also angling for the **ENS "Integrate ENS" pool** ($6,000
 split) via owner reverse-resolution.
 
-**Repo**: <https://github.com/YoungsukHwang/erc8004-explorer>
+**Repo**: <https://github.com/YoungsukHwang/erc8004-reality-check>
 **Cloud Run URL**: `https://erc8004-reality-check-<hash>-uc.a.run.app`
 **Hackathon**: ETHGlobal New York 2026, June 13-14.
 
@@ -186,7 +186,7 @@ feedbackURI hash`. The hash is the field we use for wash detection.
   > attached identity all at once. ENS reverse lookup uses web3.py
   > against a public RPC. Hosted on Cloud Run with a one-line
   > `gcloud run deploy --source=.` redeploy cycle.
-- **GitHub Repositories**: `YoungsukHwang/erc8004-explorer`
+- **GitHub Repositories**: `YoungsukHwang/erc8004-reality-check`
 
 ### Tech stack form
 
