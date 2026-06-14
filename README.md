@@ -121,7 +121,7 @@ read the BigQuery public dataset and bill query jobs to your project.
 ```bash
 # Pick your project + a name for the service account
 PROJECT=project-cc7ed957-d1e3-4c3f-8b5
-SA_NAME=erc8004-explorer
+SA_NAME=erc8004-reality-check
 SA_EMAIL="${SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
 
 # 1) Create the service account
@@ -146,7 +146,7 @@ the 1 TB / month free tier thanks to the partition cut).
 ### Or via Console UI (if you prefer clicks)
 
 1. **IAM & Admin → Service Accounts → Create service account**
-   - Name: `erc8004-explorer`, click Create
+   - Name: `erc8004-reality-check`, click Create
 2. **Grant this service account access to project**
    - Add role: `BigQuery Data Viewer`
    - Add role: `BigQuery Job User`
@@ -175,7 +175,7 @@ the 1 TB / month free tier thanks to the partition cut).
    project_id = "your-project-id"
    private_key_id = "…"
    private_key = "-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----\n"
-   client_email = "erc8004-explorer@your-project.iam.gserviceaccount.com"
+   client_email = "erc8004-reality-check@your-project.iam.gserviceaccount.com"
    client_id = "…"
    auth_uri = "https://accounts.google.com/o/oauth2/auth"
    token_uri = "https://oauth2.googleapis.com/token"
@@ -197,7 +197,7 @@ ever leaves the project.
 ```bash
 PROJECT=project-cc7ed957-d1e3-4c3f-8b5
 REGION=us-central1                                   # same region as the dataset
-SA_EMAIL="erc8004-explorer@${PROJECT}.iam.gserviceaccount.com"
+SA_EMAIL="erc8004-reality-check@${PROJECT}.iam.gserviceaccount.com"
 
 # Enable the APIs (one-time)
 gcloud services enable run.googleapis.com \
@@ -207,7 +207,7 @@ gcloud services enable run.googleapis.com \
 
 # Deploy straight from source — Cloud Build picks up the Dockerfile,
 # pushes the image to Artifact Registry, and rolls out the service.
-gcloud run deploy erc8004-explorer \
+gcloud run deploy erc8004-reality-check \
   --source=. \
   --region="$REGION" \
   --project="$PROJECT" \
@@ -220,7 +220,7 @@ gcloud run deploy erc8004-explorer \
 ```
 
 When the rollout finishes, gcloud prints the public URL
-(`https://erc8004-explorer-<hash>-<region>.a.run.app`). Visit it and
+(`https://erc8004-reality-check-<hash>-<region>.a.run.app`). Visit it and
 you're live.
 
 Re-deploys are the same command — Cloud Build picks up code changes,
