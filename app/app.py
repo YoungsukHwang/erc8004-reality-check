@@ -49,13 +49,13 @@ st.markdown(
 
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "The Real Numbers",
-    "Who's Behind It",
-    "What Agents Actually Do",
-    "Reputation, Real or Fake",
-    "🎯 Trustworthy + Payable",
-    "🔍 Find Agents",
-    "📋 Cheat Sheet",
+    "📊 Funnel",
+    "👤 Owners",
+    "🤖 Agents",
+    "⭐ Reputation",
+    "🎯 Trust + Pay",
+    "🔍 Search",
+    "📋 Summary",
 ])
 
 
@@ -73,40 +73,64 @@ with tab1:
         usdc = run_query(q.q_x402_claim_vs_reality()).iloc[0]
 
     n_reg = int(funnel.n_registered)
+    n_card = int(funnel.n_inline_json)
+    n_rated = int(funnel.n_agents_rated)
+    n_sybil = int(funnel.n_passes_sybil_bar)
     n_usdc = int(usdc.n_owners_received_usdc)
+    usdc_amt = float(usdc.total_usdc_amount or 0)
 
-    st.markdown("**Identity side** — what does the registry say agents are?")
-    f1, f2, f3, f4 = st.columns(4)
+    # ---- Strict subset funnel (each stage is a real subset of the previous one) ----
+    st.markdown("**Funnel** — each step is a strict subset of the previous one.")
+    f1, f2, f3, f4, f5 = st.columns(5)
     f1.metric("Registered", f"{n_reg:,}",
-              help="All Identity Registered events since mainnet launch")
-    f2.metric("Has on-chain card", f"{int(funnel.n_inline_json):,}",
-              delta=f"{funnel.n_inline_json/n_reg*100:.1f}%", delta_color="off")
-    f3.metric("Functional (endpoint)", f"{int(funnel.n_functional):,}",
-              delta=f"{funnel.n_functional/n_reg*100:.2f}%", delta_color="off",
-              help="services[] array non-empty")
-    f4.metric("Claims x402", f"{int(funnel.n_x402_claim):,}",
-              delta=f"{funnel.n_x402_claim/n_reg*100:.1f}%", delta_color="off",
-              help="x402Support == true on the card")
+              help="All Identity Registered events since mainnet launch.")
+    f2.metric("Has on-chain card", f"{n_card:,}",
+              delta=f"{n_card/n_reg*100:.1f}% of registered",
+              delta_color="off",
+              help="agent_uri = data:application/json;base64,…")
+    f3.metric("Has any feedback", f"{n_rated:,}",
+              delta=f"{n_rated/n_reg*100:.2f}% of registered",
+              delta_color="off",
+              help="Distinct agents that received at least one NewFeedback event.")
+    f4.metric("Passes Sybil bar (≥3)", f"{n_sybil:,}",
+              delta=f"{n_sybil/n_reg*100:.3f}% of registered",
+              delta_color="off",
+              help="unique_clients ≥ 3 — the gist filter.")
+    f5.metric("Owner received USDC", f"{n_usdc:,}",
+              delta=f"${usdc_amt:,.0f} total",
+              delta_color="off",
+              help=f"x402=true owners that ever received a USDC transfer. "
+                   f"{int(usdc.total_usdc_transfers):,} transfers, "
+                   f"${usdc_amt:,.0f} aggregate.")
 
-    st.markdown("**Reality side** — what does on-chain activity confirm?")
-    r1, r2, r3, r4 = st.columns(4)
-    r1.metric("Has any feedback", f"{int(funnel.n_agents_rated):,}",
-              delta=f"{funnel.n_agents_rated/n_reg*100:.1f}%", delta_color="off",
-              help="Distinct agents that received at least one NewFeedback")
-    r2.metric("Rated AND claims x402", f"{rated_x402:,}",
-              delta=f"{rated_x402/n_reg*100:.2f}%", delta_color="off",
-              help="Inner join of Identity & Reputation, restricted to x402=true cards")
-    r3.metric("Passes Sybil bar (≥3)", f"{int(funnel.n_passes_sybil_bar):,}",
-              delta=f"{funnel.n_passes_sybil_bar/n_reg*100:.2f}%", delta_color="off",
-              help="unique_clients >= 3 — the gist filter")
-    r4.metric("Received USDC", f"{n_usdc:,}",
-              delta=f"{n_usdc/n_reg*100:.3f}%", delta_color="off",
-              help=f"x402=true owners that ever received a USDC transfer (~${float(usdc.total_usdc_amount or 0):,.0f} total)")
+    # ---- Side attributes of the 9,520 card holders (NOT a funnel) ----
+    st.markdown(
+        f"**Card attributes** — parallel breakdowns of the {n_card:,} agents "
+        "with an inline card. These are *not* a chain; they overlap but neither "
+        "is a subset of the other."
+    )
+    a1, a2, a3, a4 = st.columns(4)
+    a1.metric("Claims x402 support", f"{int(funnel.n_x402_claim):,}",
+              delta=f"{funnel.n_x402_claim/n_card*100:.1f}% of cards",
+              delta_color="off",
+              help="Self-reported in the card JSON — needs no code or service.")
+    a2.metric("Has service endpoint", f"{int(funnel.n_functional):,}",
+              delta=f"{funnel.n_functional/n_card*100:.2f}% of cards",
+              delta_color="off",
+              help="services[] array non-empty.")
+    a3.metric("Rated AND claims x402", f"{rated_x402:,}",
+              delta="intersection",
+              delta_color="off",
+              help="Cards claiming x402 that also got at least one feedback event.")
+    a4.metric("USDC total received", f"${usdc_amt:,.0f}",
+              delta=f"to {n_usdc:,} wallets",
+              delta_color="off")
 
     st.markdown(
-        f"**Headline:** {n_reg:,} registrations claim, **{n_usdc}** "
-        f"({n_usdc/n_reg*100:.2f}%) ever received a real USDC payment. "
-        f"Each row narrows from claim to reality."
+        f"**Headline:** {n_reg:,} registrations claim, "
+        f"**{n_usdc}** ({n_usdc/n_reg*100:.2f}%) ever received a real USDC "
+        f"payment — and those owners together pulled in **${usdc_amt:,.0f}**. "
+        "Each funnel stage narrows from claim to verifiable on-chain activity."
     )
 
     st.divider()
@@ -640,7 +664,7 @@ with tab6:
     # ----- Natural-language box -----
     nl_text = st.text_input(
         "Natural-language search",
-        placeholder='e.g. "payable trading agents with at least 5 reviewers and high reputation"',
+        placeholder='e.g. "agents with at least 5 reviews and high reputation"',
         key="nl_query",
     )
 
