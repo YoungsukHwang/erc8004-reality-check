@@ -248,6 +248,10 @@ downtime.
 - `--max-instances=2` — caps the bill if the URL ever gets traffic.
 - `--memory=1Gi` — Streamlit + BigQuery client + pandas comfortably fits.
 
+> **Per-tab reading guide:** see [VIEWS.md](VIEWS.md) for a longer
+> explanation of every widget, the SQL behind each number, and how to
+> interpret what you're looking at.
+
 ## The four views
 
 1. **The Real Numbers** — the 6-step funnel above + daily/cumulative

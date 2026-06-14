@@ -225,22 +225,6 @@ def q_headline_kpis() -> str:
 # Q1 — Adoption: daily Registered count + cumulative
 # -----------------------------------------------------------------------------
 
-def q_activity_heatmap() -> str:
-    """day-of-week × hour-of-day grid of Registered events.
-    DAYOFWEEK is 1=Sunday..7=Saturday in BigQuery."""
-    return f"""
-    WITH {IDENTITY_BASE_CTE}
-    SELECT
-      EXTRACT(DAYOFWEEK FROM block_timestamp) AS dow_num,
-      FORMAT_TIMESTAMP('%a', block_timestamp) AS day_of_week,
-      EXTRACT(HOUR FROM block_timestamp) AS hour_utc,
-      COUNT(*) AS n_registered
-    FROM identity_base
-    GROUP BY dow_num, day_of_week, hour_utc
-    ORDER BY dow_num, hour_utc
-    """
-
-
 def q1_adoption_daily() -> str:
     return f"""
     WITH {IDENTITY_BASE_CTE},

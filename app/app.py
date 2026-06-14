@@ -136,34 +136,6 @@ with tab1:
     st.subheader("Cumulative Registered")
     st.area_chart(df_q1.set_index("day")["cum_registered"], height=200)
 
-    st.subheader("Activity heatmap (day-of-week × hour UTC)")
-    with st.spinner("Loading heatmap..."):
-        df_hm = run_query(q.q_activity_heatmap())
-    day_order = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
-    import altair as alt
-    heat = (
-        alt.Chart(df_hm)
-        .mark_rect()
-        .encode(
-            x=alt.X("hour_utc:O", title="Hour (UTC)"),
-            y=alt.Y("day_of_week:N", title="Day", sort=day_order),
-            color=alt.Color(
-                "n_registered:Q",
-                title="Registrations",
-                scale=alt.Scale(scheme="reds"),
-            ),
-            tooltip=["day_of_week", "hour_utc", "n_registered"],
-        )
-        .properties(height=260)
-    )
-    st.altair_chart(heat, use_container_width=True)
-    st.caption(
-        "Darkest cells = launch burst (Thu/Fri UTC on Jan 29-30). "
-        "The baseline noise concentrates in UTC business hours, consistent "
-        "with bot-farm operators running on a schedule."
-    )
-
     with st.expander("Raw daily counts"):
         st.dataframe(df_q1, width="stretch", hide_index=True)
 
@@ -210,26 +182,45 @@ with tab2:
 
     # ---- Drill-down on the #1 wallet ----
     TOP_WALLET = "0xd5d6d96fa23455ec5e3c00633f85f364d3f5a291"
-    with st.expander(f"🔬 Drill-down: top wallet `{TOP_WALLET}` (9,967 agents)", expanded=True):
+    with st.expander(f"🔬 Drill-down: top wallet `{TOP_WALLET}`", expanded=False):
         with st.spinner("Loading top-owner deep dive..."):
             dd = run_query(q.q_owner_deep_dive(TOP_WALLET)).iloc[0]
 
-        d1, d2, d3, d4 = st.columns(4)
-        d1.metric("Agents", f"{int(dd.n_agents):,}")
-        d2.metric("Has any URI", f"{int(dd.n_agents - dd.n_no_uri):,}",
-                  delta=f"{(1 - dd.n_no_uri/dd.n_agents)*100:.0f}% of pool",
-                  delta_color="off")
-        d3.metric("Has on-chain card", f"{int(dd.n_has_card):,}")
-        d4.metric("Received feedback", f"{int(dd.n_rated_in_owner):,}",
-                  help="Distinct agents in this wallet's pool that got NewFeedback events")
-
-        st.error(
-            f"**This wallet registered {int(dd.n_agents):,} agents — and every single one "
-            f"has an empty agent_uri.** Zero on-chain cards, zero service endpoints, "
-            f"zero x402 claims, zero nftOrigin entries. Pure registration spam. "
-            f"Yet **{int(dd.n_rated_in_owner)} of those empty agents received reputation "
-            f"feedback** — somebody is rating shells. Registration window: "
-            f"{dd.first_registration:%Y-%m-%d} → {dd.last_registration:%Y-%m-%d}."
+        # Raw facts only — every number is directly derivable from the SQL.
+        facts = pd.DataFrame({
+            "field": [
+                "Agents registered by this wallet",
+                "agent_uri empty (NULL or '')",
+                "agent_uri = data:application/json;base64,…",
+                "agent_uri = https:// or http://",
+                "agent_uri = ipfs://",
+                "Inline JSON card decoded successfully",
+                "Card with x402Support = true",
+                "Card with services[] non-empty",
+                "Card with nftOrigin set",
+                "Distinct agents that received ≥ 1 NewFeedback event",
+                "First registration",
+                "Last registration",
+            ],
+            "value": [
+                f"{int(dd.n_agents):,}",
+                f"{int(dd.n_no_uri):,}",
+                f"{int(dd.n_inline_base64):,}",
+                f"{int(dd.n_http):,}",
+                f"{int(dd.n_ipfs):,}",
+                f"{int(dd.n_has_card):,}",
+                f"{int(dd.n_x402_true):,}",
+                f"{int(dd.n_functional):,}",
+                f"{int(dd.n_nft_origin):,}",
+                f"{int(dd.n_rated_in_owner):,}",
+                f"{dd.first_registration:%Y-%m-%d %H:%M UTC}",
+                f"{dd.last_registration:%Y-%m-%d %H:%M UTC}",
+            ],
+        })
+        st.dataframe(facts, hide_index=True, width="stretch")
+        st.caption(
+            "Raw counts from `q_owner_deep_dive()` in queries.py. "
+            "Read them as evidence, not as a verdict."
         )
 
     # ---- Top owners ----
