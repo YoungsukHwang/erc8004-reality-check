@@ -1,13 +1,10 @@
-"""Natural-language search via Claude tool_use.
+"""Natural-language search via Vertex AI Gemini.
 
-User types a sentence ("find payable trading agents with at least 5 reviewers").
-Claude returns a structured filter dict that we hand to q_agent_search().
-Cheap: one Haiku call per query.
+Auth picks itself up automatically:
+  - locally: Application Default Credentials (`gcloud auth application-default login`)
+  - on Cloud Run: the service account attached to the service
 
-Key resolution order:
-  1. st.secrets["anthropic"]["api_key"]
-  2. environ ANTHROPIC_API_KEY
-  3. None → caller renders a hint and skips the call
+No API key, no env var, no secret.toml.
 """
 from __future__ import annotations
 
@@ -15,111 +12,102 @@ import os
 from typing import Any
 
 try:
-    import streamlit as st
-    _HAS_STREAMLIT = True
+    from google import genai
+    from google.genai import types
+    _HAS_GENAI = True
 except ImportError:
-    _HAS_STREAMLIT = False
-
-try:
-    import anthropic
-    _HAS_ANTHROPIC = True
-except ImportError:
-    _HAS_ANTHROPIC = False
+    _HAS_GENAI = False
 
 
-SEARCH_TOOL = {
+PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT") or "project-cc7ed957-d1e3-4c3f-8b5"
+LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION") or "us-central1"
+MODEL = "gemini-2.5-flash"
+
+
+FILTER_AGENTS_FN = {
     "name": "filter_agents",
     "description": (
         "Filter ERC-8004 agents in the BigQuery dataset by structured criteria. "
-        "Leave any field unset when the user didn't mention it. Owner addresses "
-        "must be 42-char hex like 0xabc…. Scores are 0-100."
+        "Leave fields the user did not mention as null. "
+        "Owner addresses are 42-char hex like 0xabc…. Scores are 0-100. "
+        "Defaults to apply: 'trustworthy'/'reputable'/'verified' → "
+        "min_unique_clients=3; 'high reputation'/'top' → min_avg_score=80; "
+        "'payable' → x402_only=true; 'functional'/'has endpoint' → has_services=true."
     ),
-    "input_schema": {
-        "type": "object",
+    "parameters": {
+        "type": "OBJECT",
         "properties": {
-            "agent_id": {
-                "type": "integer",
-                "description": "Exact agent_id when the user gives one.",
-            },
-            "owner": {
-                "type": "string",
-                "description": "Owner wallet address (0x… 42 chars).",
-            },
-            "name_contains": {
-                "type": "string",
-                "description": "Case-insensitive substring of the agent name field.",
-            },
-            "description_contains": {
-                "type": "string",
-                "description": "Case-insensitive substring of the description field.",
-            },
-            "min_unique_clients": {
-                "type": "integer",
-                "description": "Minimum number of distinct reviewers. Default to 3 if the user says 'trustworthy' / 'real' / 'verified'.",
-            },
-            "min_avg_score": {
-                "type": "number",
-                "description": "Minimum average reputation score, 0-100. Default to 80 if the user says 'high reputation' / 'top'.",
-            },
-            "x402_only": {
-                "type": "boolean",
-                "description": "Restrict to cards claiming x402Support=true (payable agents).",
-            },
-            "has_services": {
-                "type": "boolean",
-                "description": "Restrict to cards with a non-empty services[] array (functional agents).",
-            },
-            "limit": {
-                "type": "integer",
-                "description": "Max rows to return. Default 50.",
-            },
+            "agent_id": {"type": "INTEGER",
+                         "description": "Exact agent_id when the user gives one."},
+            "owner": {"type": "STRING",
+                      "description": "Owner wallet address (0x… 42 chars)."},
+            "name_contains": {"type": "STRING",
+                              "description": "Case-insensitive substring of the agent name."},
+            "description_contains": {"type": "STRING",
+                                     "description": "Case-insensitive substring of the description."},
+            "min_unique_clients": {"type": "INTEGER",
+                                   "description": "Minimum distinct reviewers."},
+            "min_avg_score": {"type": "NUMBER",
+                              "description": "Minimum average reputation score (0-100)."},
+            "x402_only": {"type": "BOOLEAN",
+                          "description": "Restrict to x402Support=true cards."},
+            "has_services": {"type": "BOOLEAN",
+                             "description": "Restrict to cards with non-empty services[]."},
+            "limit": {"type": "INTEGER",
+                      "description": "Max rows. Default 50."},
         },
     },
 }
 
-SYSTEM_PROMPT = (
-    "You are an agent-search assistant for an ERC-8004 explorer dashboard. "
-    "The user asks for agents in natural language; you call the `filter_agents` "
-    "tool exactly once with the smallest set of fields needed. "
-    "Do not invent filters the user didn't ask for. "
-    "If the user says 'payable' set x402_only=true. "
-    "If they say 'trustworthy' / 'reputable' set min_unique_clients to at least 3. "
-    "If they say 'functional' / 'has endpoint' set has_services=true. "
-    "Substring filters are case-insensitive — pass them lowercase."
+SYSTEM_INSTRUCTION = (
+    "You parse natural-language search requests for an ERC-8004 agent explorer "
+    "and call the `filter_agents` function exactly once with the smallest set "
+    "of fields the user actually asked for. Do not invent filters. "
+    "Substring filters must be lowercase."
 )
 
 
-def _get_api_key() -> str | None:
-    if _HAS_STREAMLIT:
-        try:
-            key = st.secrets.get("anthropic", {}).get("api_key")
-            if key:
-                return key
-        except Exception:
-            pass
-    return os.environ.get("ANTHROPIC_API_KEY")
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        _client = genai.Client(vertexai=True, project=PROJECT, location=LOCATION)
+    return _client
 
 
 def available() -> bool:
-    return _HAS_ANTHROPIC and _get_api_key() is not None
+    """True when the SDK is installed. Auth is checked lazily on first call."""
+    return _HAS_GENAI
 
 
 def parse_query(user_text: str) -> dict[str, Any] | None:
-    """Turn user_text into a filter dict via one Haiku call.
-    Returns None if the API key is missing or the model didn't call the tool."""
-    if not available():
+    """Use Gemini function-calling to extract a filter dict from user_text.
+    Returns None if Gemini didn't emit a function call (e.g. the request was
+    too vague). Raises on auth/network errors so the caller can surface them."""
+    if not _HAS_GENAI:
         return None
 
-    client = anthropic.Anthropic(api_key=_get_api_key())
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=512,
-        system=SYSTEM_PROMPT,
-        tools=[SEARCH_TOOL],
-        tool_choice={"type": "tool", "name": "filter_agents"},
-        messages=[{"role": "user", "content": user_text}],
+    client = _get_client()
+    resp = client.models.generate_content(
+        model=MODEL,
+        contents=user_text,
+        config=types.GenerateContentConfig(
+            system_instruction=SYSTEM_INSTRUCTION,
+            tools=[types.Tool(function_declarations=[FILTER_AGENTS_FN])],
+            tool_config=types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(
+                    mode="ANY",
+                    allowed_function_names=["filter_agents"],
+                )
+            ),
+            temperature=0,
+        ),
     )
-    for block in resp.content:
-        if block.type == "tool_use" and block.name == "filter_agents":
-            return dict(block.input)
+
+    for cand in resp.candidates or []:
+        for part in cand.content.parts or []:
+            if part.function_call and part.function_call.name == "filter_agents":
+                return dict(part.function_call.args or {})
     return None

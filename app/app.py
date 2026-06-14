@@ -634,9 +634,10 @@ with tab5:
 with tab6:
     st.header("🔍 Find Agents")
     st.caption(
-        "Free-text natural-language search (powered by Claude), or use the "
-        "structured filters below. Both end up calling the same SQL — "
-        "`q_agent_search()` in `queries.py`."
+        "Free-text natural-language search (powered by Vertex AI Gemini), or "
+        "use the structured filters below. Both end up calling the same SQL — "
+        "`q_agent_search()` in `queries.py`. Auth runs through the same "
+        "service account that already reads BigQuery — no API key anywhere."
     )
 
     # ----- Natural-language box -----
@@ -650,17 +651,23 @@ with tab6:
     if nl_text:
         if not nl_search.available():
             st.warning(
-                "Claude API key not configured. Add `[anthropic] api_key = \"sk-…\"` "
-                "to `.streamlit/secrets.toml` (or `ANTHROPIC_API_KEY` env var) to "
-                "enable natural-language search. Structured filters below still work."
+                "`google-genai` SDK is not installed. Add `google-genai>=2.8` to "
+                "requirements.txt and redeploy."
             )
         else:
-            with st.spinner("Asking Claude to parse the request..."):
-                nl_filters = nl_search.parse_query(nl_text)
-            if nl_filters:
-                st.success(f"Parsed filters: `{nl_filters}`")
-            else:
-                st.error("Claude couldn't extract a filter — try rephrasing.")
+            try:
+                with st.spinner("Asking Gemini to parse the request..."):
+                    nl_filters = nl_search.parse_query(nl_text)
+                if nl_filters:
+                    st.success(f"Parsed filters: `{nl_filters}`")
+                else:
+                    st.error("Gemini couldn't extract a filter — try rephrasing.")
+            except Exception as e:
+                st.error(
+                    f"Vertex AI call failed: `{e}`. Make sure the active service "
+                    "account has `roles/aiplatform.user` and the Vertex AI API is "
+                    "enabled in this project."
+                )
 
     st.divider()
 

@@ -129,7 +129,7 @@ gcloud iam service-accounts create "$SA_NAME" \
   --display-name="ERC-8004 Explorer (BigQuery reader)" \
   --project="$PROJECT"
 
-# 2) Grant the two BigQuery roles it needs
+# 2) Grant the roles it needs
 gcloud projects add-iam-policy-binding "$PROJECT" \
   --member="serviceAccount:${SA_EMAIL}" \
   --role="roles/bigquery.dataViewer"
@@ -137,11 +137,20 @@ gcloud projects add-iam-policy-binding "$PROJECT" \
 gcloud projects add-iam-policy-binding "$PROJECT" \
   --member="serviceAccount:${SA_EMAIL}" \
   --role="roles/bigquery.jobUser"
+
+# 3) Vertex AI Gemini powers the NL-search box in Tab 6
+gcloud services enable aiplatform.googleapis.com --project="$PROJECT"
+
+gcloud projects add-iam-policy-binding "$PROJECT" \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/aiplatform.user"
 ```
 
 That's the entire setup. `dataViewer` lets it read tables; `jobUser`
-lets it run query jobs (the cost lands on your project — well inside
-the 1 TB / month free tier thanks to the partition cut).
+lets it run query jobs (billed to your project, comfortably under the
+1 TB / month free tier thanks to the partition cut). `aiplatform.user`
+lets the same identity call Gemini for natural-language search — no
+API key, the SA's own credentials are enough.
 
 ### Or via Console UI (if you prefer clicks)
 
