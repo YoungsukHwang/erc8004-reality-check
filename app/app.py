@@ -12,6 +12,7 @@ import streamlit as st
 from bq import run_query
 import queries as q
 import nl_search
+from streamlit_option_menu import option_menu
 
 
 st.set_page_config(
@@ -48,21 +49,55 @@ st.markdown(
 )
 
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊 Funnel",
-    "👤 Owners",
-    "🤖 Agents",
-    "⭐ Reputation",
-    "🎯 Trust + Pay",
-    "🔍 Search",
-    "📋 Summary",
-])
+NAV_OPTIONS = [
+    "Funnel", "Owners", "Agents", "Reputation",
+    "Trust + Pay", "Search", "Summary",
+]
+NAV_ICONS = [
+    "bar-chart-fill",   # Funnel
+    "people-fill",      # Owners
+    "robot",            # Agents
+    "star-fill",        # Reputation
+    "currency-dollar",  # Trust + Pay
+    "search",           # Search
+    "clipboard-data",   # Summary
+]
+
+selected = option_menu(
+    menu_title=None,
+    options=NAV_OPTIONS,
+    icons=NAV_ICONS,
+    orientation="horizontal",
+    default_index=0,
+    styles={
+        "container": {
+            "padding": "0!important",
+            "background-color": "transparent",
+            "margin-bottom": "8px",
+        },
+        "icon": {"color": "#FF8C42", "font-size": "16px"},
+        "nav-link": {
+            "font-size": "14px",
+            "font-weight": "500",
+            "text-align": "center",
+            "margin": "0 2px",
+            "padding": "10px 14px",
+            "--hover-color": "rgba(255, 75, 75, 0.10)",
+            "border-radius": "8px",
+        },
+        "nav-link-selected": {
+            "background-color": "#FF4B4B",
+            "color": "white",
+            "font-weight": "600",
+        },
+    },
+)
 
 
 # =============================================================================
 # Tab 1 — The Real Numbers (Q1 Adoption + funnel)
 # =============================================================================
-with tab1:
+if selected == "Funnel":
     st.header("The Real Numbers")
     st.caption("Funnel: registered → has card → functional → rated → passes Sybil bar.")
 
@@ -167,7 +202,7 @@ with tab1:
 # =============================================================================
 # Tab 2 — Who's Behind It (owner concentration + bot-farm hosts)
 # =============================================================================
-with tab2:
+elif selected == "Owners":
     st.header("Who's Behind It")
     st.caption(
         "Pareto on owners + bot-farm fingerprint via external URI hosts. "
@@ -296,7 +331,7 @@ with tab2:
 # =============================================================================
 # Tab 3 — What Agents Actually Do (live)
 # =============================================================================
-with tab3:
+elif selected == "Agents":
     st.header("What Agents Actually Do")
     st.caption(
         "On-chain agent cards (base64-encoded inline JSON) decoded and classified. "
@@ -424,7 +459,7 @@ with tab3:
 # =============================================================================
 # Tab 4 — Reputation, Real or Fake (Q3 + Q4)
 # =============================================================================
-with tab4:
+elif selected == "Reputation":
     st.header("Reputation, Real or Fake")
     st.caption(
         "Q3 = the gist Sybil bar (unique_clients ≥ 3). "
@@ -587,7 +622,7 @@ with tab4:
 # =============================================================================
 # Tab 5 — 🎯 Trustworthy + Payable (the prize-statement view)
 # =============================================================================
-with tab5:
+elif selected == "Trust + Pay":
     st.header("🎯 Trustworthy + Payable agents")
     st.caption(
         "The intersection of three filters: ≥ 3 unique reviewers, average score "
@@ -652,7 +687,7 @@ with tab5:
 # =============================================================================
 # Tab 6 — 🔍 Find Agents (filter UI + NL search via Claude)
 # =============================================================================
-with tab6:
+elif selected == "Search":
     st.header("🔍 Find Agents")
     st.caption(
         "Free-text natural-language search (powered by Vertex AI Gemini), or "
@@ -769,7 +804,7 @@ with tab6:
 # =============================================================================
 # Tab 7 — 📋 Cheat Sheet (every headline number on one screen)
 # =============================================================================
-with tab7:
+elif selected == "Summary":
     st.header("📋 Cheat Sheet — everything on one page")
     st.caption(
         "Every number here is also derived from one of the queries powering Tabs 1-4. "
