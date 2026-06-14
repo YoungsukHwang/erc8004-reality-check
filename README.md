@@ -1,4 +1,4 @@
-# ERC-8004 Agent Explorer
+# ERC 8004 Reality Check
 
 **Target track:** GCP "Best On-Chain Agent Economy Application" — ETHGlobal NY 2026.
 

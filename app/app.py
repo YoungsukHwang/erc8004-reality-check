@@ -14,7 +14,7 @@ import queries as q
 
 
 st.set_page_config(
-    page_title="ERC-8004 Agent Explorer",
+    page_title="ERC 8004 Reality Check",
     page_icon="🔎",
     layout="wide",
 )
@@ -24,7 +24,7 @@ st.set_page_config(
 # Sidebar — context
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("### ERC-8004 Explorer")
+    st.markdown("### ERC 8004 Reality Check")
     st.caption(
         "We index the noise. You see the signal.\n\n"
         "**Source:** `bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs`\n\n"
@@ -40,7 +40,7 @@ with st.sidebar:
     )
 
 
-st.title("ERC-8004 Agent Explorer")
+st.title("ERC 8004 Reality Check")
 st.markdown(
     "Four scanners brag about big registration counts. "
     "We open the boxes to show what's inside."
@@ -141,7 +141,9 @@ with tab2:
     n_total = int(conc.n_total)
     n_owners = int(conc.n_owners)
 
-    o1, o2, o3, o4, o5 = st.columns(5)
+    o0, o1, o2, o3, o4, o5 = st.columns(6)
+    o0.metric("Total Registered", f"{n_total:,}",
+              help="All Identity Registered events (same number Tab 1 / Tab 3 use as their denominator)")
     o1.metric("Distinct owners", f"{n_owners:,}")
     o2.metric("Avg agents per owner", f"{n_total / n_owners:.1f}")
     o3.metric("Top 1 owner share", f"{conc.top1 / n_total * 100:.1f}%",
