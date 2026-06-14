@@ -17,98 +17,94 @@ ERC-8004 sites count registrations; this is the internal-analytics
 dashboard that opens the box. Detailed numbers live in the dashboard —
 the voice-over names what each tab is *for*.
 
-**[0:00 – 0:18]  Open on the brand row at the top of the page**
+**[0:00 – 0:22]  Open on the brand row at the top of the page**
 
-> "Hi, I'm Young — I'm a Data Scientist at American Express, and I built
-> this in the last day at ETHGlobal New York. There are already four
-> ERC-8004 scanners online. They all do one thing: count registrations
-> and show you a leaderboard. None of them open the box. This is
-> different — think of it as an analytics observatory for the agent
-> registry. The kind of internal dashboard a serious team would build to
-> *understand* what's actually been registered on chain, not just count
-> it."
+> "Hi, I'm Young — I've been working on data science at American
+> Express, and I built ERC 8004 Reality Check to deep-dive into the
+> ERC-8004 usage. 8004 Reality Check opens the box. This is the first
+> line of analytics dashboard created from Google's Web3 ERC-8004
+> dataset. It provides not only top-line numbers and a leaderboard,
+> but also in-depth analytics that highlight how ERC-8004 is actually
+> being used."
 
 ---
 
-**[0:18 – 0:34]  Tab 1 — The Real Numbers**
+**[0:22 – 0:32]  Tab 1 — The Real Numbers**
 
 > "The first tab is the funnel. Other scanners stop at the top line —
-> 'thirty four thousand agents registered.' Here every step is a real
-> subset of the one above it, all the way down to the wallets that
-> actually received a USDC payment. The success bar at the bottom is
-> the chain confirming what the registry only claims."
+> 'thirty-four thousand agents registered.'"
+
+*(Land on the funnel row so the viewer sees the strict chain narrow
+left-to-right, ending on the success callout.)*
 
 ---
 
-**[0:34 – 0:54]  Click "Who's Behind It"**
+**[0:32 – 0:52]  Click "Who's Behind It"**
 
 > "The second tab answers: who registered all of this? You'll see the
-> Pareto on owners, the external hosts that are run by a single wallet
-> (those are bot farms), and a drill-down on the single biggest
-> registrant that breaks every category down side by side. The ENS
-> column right next to the address turns anonymous hex into real
-> identities wherever the owner has set one."
+> Pareto distribution on owners, the external hosts that are run by a
+> single wallet. The ENS column right next to the address turns
+> anonymous hex into real identities wherever the owner has set one."
 
 *(Open the top-wallet drill-down briefly so the raw-counts table is on
 screen.)*
 
 ---
 
-**[0:54 – 1:14]  Click "What Agents Actually Do"**
+**[0:52 – 1:07]  Click "What Agents Actually Do"**
 
 > "Third tab opens the agent cards. You'll find what shape the
-> registrations actually take — empty entries, NFT wrappers, test spam,
-> functional agents with real endpoints — and the protocol mix inside
-> the cards: OASF, MCP, A2A, web. The headline measurement on this tab
-> is the x402 claim versus reality: it joins BigQuery's `token_transfers`
-> table to ask which of the agents that *say* they accept payment have
-> ever received anything."
+> registrations actually take — empty entries, NFT wrappers, test
+> spam, functional agents with real endpoints."
 
 ---
 
-**[1:14 – 1:34]  Click "Reputation, Real or Fake"**
+**[1:07 – 1:30]  Click "Reputation, Real or Fake"**
 
 > "Fourth tab is reputation. The standard filter that every other
 > scanner uses is 'three or more unique reviewers.' You'll find that
-> filter here, but you'll also find what it misses — feedback URI hash
-> collisions that catch coordinated wash campaigns where one piece of
-> feedback was reused across hundreds of agents by hundreds of wallets.
-> The drill-down expanders surface the specific clients that only ever
-> hand out perfect scores."
+> filter here, but you'll also find what it misses — feedback URI
+> hash collisions that catch coordinated wash campaigns where one
+> piece of feedback was reused across hundreds of agents by hundreds
+> of wallets. The drill-down expanders surface the specific clients
+> that only ever hand out perfect scores."
 
 ---
 
-**[1:34 – 1:54]  Click "Trustworthy + Payable"**
+**[1:30 – 1:50]  Click "Trustworthy + Payable"**
 
 > "Fifth tab is the answer. It intersects every filter — Sybil bar,
 > minimum reputation, x402 claim, and real on-chain USDC settlement —
-> and shows you the agents that survive. The ENS column on the left is
-> the credibility signal: the registry's largest anonymous registrants
-> have no ENS at all, while the agents that actually got paid are owned
-> by ENS-named wallets."
+> and shows you the agents that survive. The ENS column on the left
+> is the credibility signal: the registry's largest anonymous
+> registrants have no ENS at all, while the agents that actually got
+> paid are owned by ENS-named wallets."
 
 *(Highlight the `owner_ens` column.)*
 
 ---
 
-**[1:54 – 2:14]  Click "Find Agents", type the example**
+**[1:50 – 2:10]  Click "Find Agents", type the example**
 
 > "Sixth tab is search — both a free-text box powered by Vertex AI
-> Gemini, and the same filters exposed as widgets so you can drive the
-> search by hand. Watch — 'agents with at least 5 reviews and high
-> reputation.' Gemini parses the sentence into structured filters and
-> BigQuery returns the result. No API key, no secret file — the same
-> service account that reads BigQuery calls Gemini and resolves ENS."
+> Gemini, and the same filters exposed as widgets so you can drive
+> the search by hand. Watch — 'agents with at least 5 reviews and
+> high reputation.' Gemini parses the sentence into structured
+> filters and BigQuery returns the result. No API key, no secret
+> file — the same service account that reads BigQuery calls Gemini
+> and resolves ENS."
 
 *(Press Enter, let the results render.)*
 
 ---
 
-**[2:14 – 2:25]  Close**
+**[2:10 – 2:25]  Close**
 
-> "BigQuery for the data, Cloud Run for hosting, Vertex AI Gemini for
-> search, ENS for identity — all on one GCP service account. Open
-> source. Repo and live demo are linked below."
+> "Under the hood, it's BigQuery for the data, Cloud Run for the app,
+> Vertex AI Gemini for natural-language search, and ENS for identity
+> resolution — all running through one GCP service account. No API
+> keys, no secret files. It's open source, and the repo and live demo
+> are linked below."
 
 ---
 
@@ -119,10 +115,10 @@ upload fails or a judge asks for the short version.
 
 **[0:00 – 0:12]  Open**
 
-> "I'm Young, a Data Scientist at AmEx. There are already four
-> ERC-8004 scanners online, and they all just count registrations. This
-> is the analytics observatory that opens the box — a real internal
-> dashboard for the agent registry, not a leaderboard."
+> "I'm Young, working on data science at AmEx. ERC 8004 Reality Check
+> opens the box on the agent registry — the first analytics dashboard
+> built straight from Google's Web3 ERC-8004 dataset. Not a top-line
+> counter; in-depth analytics on how the registry is actually used."
 
 ---
 
@@ -189,13 +185,13 @@ upload fails or a judge asks for the short version.
 
 For walking judges through the framing in one breath.
 
-> "I'm Young, Data Scientist at AmEx. The existing ERC-8004 scanners
-> count registrations and stop. This is an analytics observatory —
-> the internal dashboard that opens the box. Six tabs that walk you
-> from who registered, to what they actually are, to which ones got
-> paid, to a Gemini-powered natural-language search. Same service
-> account does BigQuery, Cloud Run, Vertex AI, and ENS — no API key
-> anywhere. Open source, live demo linked."
+> "I'm Young, working on data science at AmEx. ERC 8004 Reality Check
+> opens the box on the registry — the first in-depth analytics
+> dashboard built straight from Google's Web3 ERC-8004 dataset. Six
+> tabs that walk you from who registered, to what they actually are,
+> to which ones got paid, to a Gemini-powered natural-language search.
+> Same service account does BigQuery, Cloud Run, Vertex AI, and ENS —
+> no API key anywhere. Open source, live demo linked."
 
 ---
 
